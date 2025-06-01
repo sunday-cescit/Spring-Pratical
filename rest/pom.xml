@@ -101,7 +101,7 @@
 			<groupId>org.testcontainers</groupId>
 			<artifactId>postgresql</artifactId>
 			<version>1.19.3</version>
-			<scope>test</scope>
+			<!-- <scope>test</scope> -->
 		</dependency>
 
 		<!-- Testcontainers JUnit 5 integration -->
@@ -121,6 +121,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <version>6.0.0</version> <!-- This version is compatible with Spring Boot 3.x -->
+            <scope>test</scope>
         </dependency>
         <!-- JJWT Core API -->
         <dependency>
@@ -154,5 +161,14 @@
             </plugin>
         </plugins>
     </build>
+<profiles>
+    <profile>
+        <id>test</id>
+        <properties>
+            <!-- Make sure to specify 'test' as the active profile -->
+            <spring.profiles.active>test</spring.profiles.active>
+        </properties>
+    </profile>
+</profiles>
 
 </project>

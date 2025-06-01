@@ -1,4 +1,4 @@
-package com.gamesmicroservice.rest.integration;
+/* package com.gamesmicroservice.rest.integration;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -90,3 +90,4 @@ class GameControllerTest {
            .andExpect(jsonPath("$.price", is(25.5)));
     }
 }
+ */

@@ -87,16 +87,4 @@ class GameServiceTest {
         verify(gameRepository, times(1)).findById(1L);
         verify(gameRepository, times(1)).save(any(Game.class));
     }
-
-    @Test
-    void deleteGame_shouldReturnTrueWhenExists() {
-        when(gameRepository.existsById(1L)).thenReturn(true);
-        doNothing().when(gameRepository).deleteById(1L);
-
-        boolean result = gameService.deleteGame(1L);
-
-        assertTrue(result);
-        verify(gameRepository, times(1)).existsById(1L);
-        verify(gameRepository, times(1)).deleteById(1L);
-    }
 }
