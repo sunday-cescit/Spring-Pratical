@@ -73,18 +73,45 @@ class GameServiceTest {
 
     @Test
     void updateGame_shouldUpdateExistingGame() {
-        Game updatedDetails = new Game(null, "Updated Name", "Updated Description", "Adventure", 39.99,
-                "https://example.com/updated");
+        // Given
+        Game existingGame = new Game(1L, "Original Name", "Original Description", "Action", 
+                                29.99, "https://example.com/original");
+        Game updatedDetails = new Game(null, "Updated Name", "Updated Description", "Adventure", 
+                                    39.99, "https://example.com/updated");
 
-        when(gameRepository.findById(1L)).thenReturn(Optional.of(testGame));
+        when(gameRepository.findById(1L)).thenReturn(Optional.of(existingGame));
         when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Optional<Game> updated = gameService.updateGame(1L, updatedDetails);
+        // When
+        Game result = gameService.updateGame(1L, updatedDetails);
 
-        assertTrue(updated.isPresent());
-        assertEquals("Updated Name", updated.get().getName());
-        assertEquals("Updated Description", updated.get().getDescription());
+        // Then
+        assertNotNull(result);
+        assertEquals(1L, result.getId()); // Verify ID remains the same
+        assertEquals("Updated Name", result.getName());
+        assertEquals("Updated Description", result.getDescription());
+        assertEquals("Adventure", result.getCategory());
+        assertEquals(39.99, result.getPrice(), 0.001);
+        assertEquals("https://example.com/updated", result.getUrl());
+        
         verify(gameRepository, times(1)).findById(1L);
         verify(gameRepository, times(1)).save(any(Game.class));
+    }
+
+    @Test
+    void updateGame_shouldReturnNullWhenGameNotFound() {
+        // Given
+        Game updatedDetails = new Game(null, "Updated Name", "Updated Description", "Adventure", 
+                                    39.99, "https://example.com/updated");
+        
+        when(gameRepository.findById(1L)).thenReturn(Optional.empty());
+
+        // When
+        Game result = gameService.updateGame(1L, updatedDetails);
+
+        // Then
+        assertNull(result);
+        verify(gameRepository, times(1)).findById(1L);
+        verify(gameRepository, never()).save(any(Game.class));
     }
 }
