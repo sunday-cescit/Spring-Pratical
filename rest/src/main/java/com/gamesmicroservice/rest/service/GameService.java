@@ -2,6 +2,9 @@ package com.gamesmicroservice.rest.service;
 
 import com.gamesmicroservice.rest.model.Game;
 import com.gamesmicroservice.rest.repository.GameRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,17 +19,28 @@ public class GameService {
     }
 
     public List<Game> getAllGames() {
-        return gameRepository.findAll();// to find all games
+        return gameRepository.findAll(); // get all games
     }
 
+    @Cacheable(value = "recordCache", key = "#id")
     public Optional<Game> getGameById(Long id) {
-        return gameRepository.findById(id); //to find game by id
+        return gameRepository.findById(id); // get game by ID with caching
     }
 
+    @Cacheable(value = "categoryCache", key = "#category")
+    public List<Game> getGamesByCategory(String category) {
+        return gameRepository.findByCategoryIgnoreCase(category); // get games by category with caching
+    }
+
+    @CacheEvict(value = "categoryCache", key = "#game.category")
     public Game createGame(Game game) {
-        return gameRepository.save(game); //jpa provide save method
+        return gameRepository.save(game); // save new game and evict related category cache
     }
-
+    
+    @Caching(evict = {
+        @CacheEvict(value = "recordCache", key = "#id"),
+        @CacheEvict(value = "categoryCache", key = "#result?.category")
+    })
     public Optional<Game> updateGame(Long id, Game gameDetails) {
         return gameRepository.findById(id)
                 .map(existingGame -> {
@@ -38,12 +52,16 @@ public class GameService {
                     return gameRepository.save(existingGame);
                 });
     }
+    
 
+    @Caching(evict = {
+        @CacheEvict(value = "recordCache", key = "#id"),
+        @CacheEvict(value = "categoryCache", allEntries = true) // fallback if category is unknown
+    })
     public boolean deleteGame(Long id) {
-        if (gameRepository.existsById(id)) {
+        return gameRepository.findById(id).map(game -> {
             gameRepository.deleteById(id);
             return true;
-        }
-        return false;
+        }).orElse(false);
     }
 }
