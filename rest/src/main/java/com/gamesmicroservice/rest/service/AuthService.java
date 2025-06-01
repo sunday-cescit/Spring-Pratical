@@ -11,6 +11,10 @@ import com.gamesmicroservice.rest.payload.response.MessageResponse;
 import com.gamesmicroservice.rest.repository.RoleRepository;
 import com.gamesmicroservice.rest.repository.UserRepository;
 import com.gamesmicroservice.rest.util.JwtService;
+
+import jakarta.validation.ConstraintViolation;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -31,6 +35,8 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder encoder;
     private final JwtService jwtService;
+    @Autowired
+    private jakarta.validation.Validator validator;  // Explicitly use Jakarta Validator
 
     public AuthService(AuthenticationManager authenticationManager, 
                       UserRepository userRepository, 
@@ -64,35 +70,43 @@ public class AuthService {
     }
 
     public MessageResponse registerUser(RegisterRequest registerRequest) {
-        if (userRepository.existsByUsername(registerRequest.getUsername())) {
-            return new MessageResponse("Error: Username is already taken!");
-        }
-
-        if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            return new MessageResponse("Error: Email is already in use!");
-        }
-
-        // Create new user's account
-        User user = new User(registerRequest.getUsername(), 
-                            registerRequest.getEmail(),
-                            encoder.encode(registerRequest.getPassword()));
-
-        Set<Role> roles = new HashSet<>();
-        
-        ERole defaultRole = ERole.ROLE_USER;
-
-        validateRoleName(defaultRole.name());  // validate "ROLE_USER"
-
-        Role userRole = roleRepository.findByName(ERole.ROLE_USER)
-                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-        roles.add(userRole);
-
-        user.setRoles(roles);
-        userRepository.save(user);
-
-        return new MessageResponse("User registered successfully!");
+    if (userRepository.existsByUsername(registerRequest.getUsername())) {
+        return new MessageResponse("Error: Username is already taken!");
     }
 
+    if (userRepository.existsByEmail(registerRequest.getEmail())) {
+        return new MessageResponse("Error: Email is already in use!");
+    }
+
+    // First create user with raw password for validation
+    User user = new User(registerRequest.getUsername(), 
+                        registerRequest.getEmail(),
+                        registerRequest.getPassword()); // Not encoded yet
+
+    // This will validate the raw password
+    Set<ConstraintViolation<User>> violations = validator.validate(user);
+    if (!violations.isEmpty()) {
+        // Handle validation errors
+        StringBuilder sb = new StringBuilder();
+        for (ConstraintViolation<User> violation : violations) {
+            sb.append(violation.getMessage()).append("; ");
+        }
+        return new MessageResponse("Error: " + sb.toString());
+    }
+
+    // Only encode the password after validation passes
+    user.setPassword(encoder.encode(registerRequest.getPassword()));
+
+    Set<Role> roles = new HashSet<>();
+    Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+            .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+    roles.add(userRole);
+
+    user.setRoles(roles);
+    userRepository.save(user);
+
+    return new MessageResponse("User registered successfully!");
+}
     public MessageResponse createUser(UserCreateRequest userCreateRequest) {
         if (userRepository.existsByUsername(userCreateRequest.getUsername())) {
             return new MessageResponse("Error: Username is already taken!");

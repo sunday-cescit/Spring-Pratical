@@ -57,11 +57,11 @@ public class GameController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Update an existing game", description = "Updates the game with the given ID")
     public ResponseEntity<Game> updateGame(@PathVariable Long id, @RequestBody Game game) {
-        return gameService.updateGame(id, game)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Game updatedGame = gameService.updateGame(id, game);
+        return updatedGame != null 
+                ? ResponseEntity.ok(updatedGame) 
+                : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/{id}")

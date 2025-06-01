@@ -39,9 +39,9 @@ public class GameService {
     
     @Caching(evict = {
         @CacheEvict(value = "recordCache", key = "#id"),
-        @CacheEvict(value = "categoryCache", key = "#result?.category")
+        @CacheEvict(value = "categoryCache", key = "#result.category", condition = "#result != null")
     })
-    public Optional<Game> updateGame(Long id, Game gameDetails) {
+    public Game updateGame(Long id, Game gameDetails) {
         return gameRepository.findById(id)
                 .map(existingGame -> {
                     existingGame.setName(gameDetails.getName());
@@ -50,7 +50,8 @@ public class GameService {
                     existingGame.setPrice(gameDetails.getPrice());
                     existingGame.setUrl(gameDetails.getUrl());
                     return gameRepository.save(existingGame);
-                });
+                })
+                .orElse(null);
     }
     
 

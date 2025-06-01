@@ -27,17 +27,16 @@ public class User {
     private String username;
 
     @NotBlank
-    @Size(min = 8, max = 16)
-    @Pattern(
-    	regexp = "^(?!\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,16}$",
-    	message = "Password must be 8-16 characters, contain upper/lowercase, digit, special char, and not start with a digit"
-	)
     private String password;
+
 
 
     @NotBlank
     @Email(message = "Email should be valid")
     private String email;
+
+    @Column(nullable = false)
+    private boolean enabled = true; // Default to true for new users
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_roles",
@@ -50,5 +49,7 @@ public class User {
         this.username = username;
         this.email = email;
         this.password = password;
+        this.enabled = true; // Enable by default
+
     }
 }
