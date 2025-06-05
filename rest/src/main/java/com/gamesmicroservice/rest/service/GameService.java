@@ -2,9 +2,6 @@ package com.gamesmicroservice.rest.service;
 
 import com.gamesmicroservice.rest.model.Game;
 import com.gamesmicroservice.rest.repository.GameRepository;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,57 +9,94 @@ import java.util.Optional;
 
 @Service
 public class GameService {
+    private static final String RECORD_CACHE = "recordCache";
+    private static final String CATEGORY_CACHE = "categoryCache";
+    
     private final GameRepository gameRepository;
+    private final RedisCacheService redisCacheService;
 
-    public GameService(GameRepository gameRepository) {
+    public GameService(GameRepository gameRepository, RedisCacheService redisCacheService) {
         this.gameRepository = gameRepository;
+        this.redisCacheService = redisCacheService;
     }
 
     public List<Game> getAllGames() {
-        return gameRepository.findAll(); // get all games
+        return gameRepository.findAll();
     }
 
-    @Cacheable(value = "recordCache", key = "#id")
     public Optional<Game> getGameById(Long id) {
-        return gameRepository.findById(id); // get game by ID with caching
+        Optional<Game> cachedGame = redisCacheService.get(RECORD_CACHE, id.toString(), Game.class);
+        if (cachedGame.isPresent()) {
+            return cachedGame;
+        }
+        
+        Optional<Game> game = gameRepository.findById(id);
+        game.ifPresent(g -> redisCacheService.put(RECORD_CACHE, id.toString(), g));
+        return game;
     }
 
-    @Cacheable(value = "categoryCache", key = "#category")
     public List<Game> getGamesByCategory(String category) {
-        return gameRepository.findByCategoryIgnoreCase(category); // get games by category with caching
+       /*  Optional<List<Game>> cachedGames = redisCacheService.get(CATEGORY_CACHE, category, List.class);
+        if (cachedGames.isPresent()) {
+            return cachedGames.get();
+        } */
+        
+        List<Game> games = gameRepository.findByCategoryIgnoreCase(category);
+        if (!games.isEmpty()) {
+            redisCacheService.put(CATEGORY_CACHE, category, games);
+        }
+        return games;
     }
 
-    @CacheEvict(value = "categoryCache", key = "#game.category")
     public Game createGame(Game game) {
-        return gameRepository.save(game); // save new game and evict related category cache
+        Game createdGame = gameRepository.save(game);
+        // Evict the category cache for this game's category
+        redisCacheService.evict(CATEGORY_CACHE, game.getCategory());
+        return createdGame;
     }
-    
-    @Caching(evict = {
-        @CacheEvict(value = "recordCache", key = "#id"),
-        @CacheEvict(value = "categoryCache", key = "#result.category", condition = "#result != null")
-    })
+
     public Game updateGame(Long id, Game gameDetails) {
         return gameRepository.findById(id)
                 .map(existingGame -> {
+                    // Get old category before update
+                    String oldCategory = existingGame.getCategory();
+                    
                     existingGame.setName(gameDetails.getName());
                     existingGame.setDescription(gameDetails.getDescription());
                     existingGame.setCategory(gameDetails.getCategory());
                     existingGame.setPrice(gameDetails.getPrice());
                     existingGame.setUrl(gameDetails.getUrl());
-                    return gameRepository.save(existingGame);
+                    
+                    Game updatedGame = gameRepository.save(existingGame);
+                    
+                    // Evict caches
+                    redisCacheService.evict(RECORD_CACHE, id.toString());
+                    
+                    // If category changed, evict both old and new category caches
+                    if (!oldCategory.equalsIgnoreCase(updatedGame.getCategory())) {
+                        redisCacheService.evict(CATEGORY_CACHE, oldCategory);
+                    }
+                    redisCacheService.evict(CATEGORY_CACHE, updatedGame.getCategory());
+                    
+                    return updatedGame;
                 })
                 .orElse(null);
     }
-    
 
-    @Caching(evict = {
-        @CacheEvict(value = "recordCache", key = "#id"),
-        @CacheEvict(value = "categoryCache", allEntries = true) // fallback if category is unknown
-    })
     public boolean deleteGame(Long id) {
-        return gameRepository.findById(id).map(game -> {
-            gameRepository.deleteById(id);
-            return true;
-        }).orElse(false);
+        return gameRepository.findById(id)
+                .map(game -> {
+                    // Get category before deletion
+                    String category = game.getCategory();
+                    
+                    gameRepository.deleteById(id);
+                    
+                    // Evict caches
+                    redisCacheService.evict(RECORD_CACHE, id.toString());
+                    redisCacheService.evict(CATEGORY_CACHE, category);
+                    
+                    return true;
+                })
+                .orElse(false);
     }
 }

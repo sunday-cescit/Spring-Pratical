@@ -3,6 +3,7 @@ package com.gamesmicroservice.rest.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -26,6 +27,7 @@ public class User {
     @Size(min = 6, max = 10)
     private String username;
 
+    @JsonIgnore
     @NotBlank
     private String password;
 

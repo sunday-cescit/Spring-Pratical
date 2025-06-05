@@ -36,7 +36,7 @@ class GameControllerIntegrationTest {
     }
 
 private void loginAndExtractJwtToken() {
-    String loginPayload = "{\"username\": \"akash\", \"password\": \"akash123\"}";
+    String loginPayload = "{\"username\": \"akash1\", \"password\": \"Akash@123\"}";
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);

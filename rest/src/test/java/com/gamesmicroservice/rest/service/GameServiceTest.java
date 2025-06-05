@@ -8,6 +8,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.Arrays;
 import java.util.List;
@@ -15,8 +17,11 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+@MockitoSettings(strictness = Strictness.LENIENT)
 @ExtendWith(MockitoExtension.class)
 class GameServiceTest {
 
@@ -26,11 +31,19 @@ class GameServiceTest {
     @InjectMocks
     private GameService gameService;
 
+    @Mock
+    private RedisCacheService redisCacheService; // ✅ Add this line
+
     private Game testGame;
 
     @BeforeEach
     void setUp() {
         testGame = new Game(1L, "Test Game", "Some Description...", "Action", 29.99, "https://example.com/game");
+    
+        // ✅ Mock RedisCacheService behavior
+           when(redisCacheService.get(anyString(), anyString(), eq(Game.class)))
+        .thenReturn(Optional.empty());
+    doNothing().when(redisCacheService).evict(anyString(), anyString());
     }
 
     @Test
