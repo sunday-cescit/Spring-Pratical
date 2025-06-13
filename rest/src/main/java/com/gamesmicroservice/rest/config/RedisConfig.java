@@ -15,11 +15,11 @@ public class RedisConfig {
         poolConfig.setMaxIdle(5);
         poolConfig.setMinIdle(1);
         poolConfig.setTestOnBorrow(true);
-        poolConfig.setTestOnReturn(true);
-        poolConfig.setTestWhileIdle(true);
 
+        String host = "redis-17497.c92.us-east-1-3.ec2.redns.redis-cloud.com";
+        int port = 17497;
+        String password = "HX2rErIlX7LrwPYlbxRSFAI19ei6Hhfs";
 
-        // Connects to Redis at localhost:6379 (Memurai)
-        return new JedisPool(poolConfig, "127.0.0.1", 6379);
+        return new JedisPool(poolConfig, host, port, 2000, password);
     }
 }
