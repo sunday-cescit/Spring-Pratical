@@ -1,4 +1,4 @@
-/* package com.gamesmicroservice.rest.integration;
+package com.gamesmicroservice.rest.integration;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +40,7 @@ class GameControllerTest {
         // ensure Hibernate doesn’t try to re-run init scripts
         registry.add("spring.jpa.hibernate.ddl-auto", () -> "update");
 
-            // 👇 Reduce the connection pool size to avoid overload
+        // 👇 Reduce the connection pool size to avoid overload
         registry.add("spring.datasource.hikari.maximum-pool-size", () -> "2");
         registry.add("spring.datasource.hikari.minimum-idle", () -> "1");
 
@@ -89,5 +89,4 @@ class GameControllerTest {
            .andExpect(jsonPath("$.name", is("TC New Game")))
            .andExpect(jsonPath("$.price", is(25.5)));
     }
-}
- */
+} 
