@@ -2,5 +2,6 @@
 FROM eclipse-temurin:17-jdk-jammy
 
 WORKDIR /usr/src/app
-COPY target/rest-0.0.1-SNAPSHOT.jar app.jar
+COPY target/game-service.jar app.jar
+EXPOSE 8082
 CMD ["java", "-jar", "app.jar"]

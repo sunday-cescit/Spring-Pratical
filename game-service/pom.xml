@@ -14,7 +14,7 @@
 
     <groupId>com.gamesmicroservice</groupId>
     <artifactId>rest</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>game-service</version>
     <name>rest</name>
     <description>Game REST API with Spring Boot</description>
 
@@ -166,6 +166,7 @@
     </dependencies>
 
     <build>
+      <finalName>game-service</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
