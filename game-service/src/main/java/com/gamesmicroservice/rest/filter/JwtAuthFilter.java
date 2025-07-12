@@ -33,32 +33,41 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
         String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+    System.out.println("🚀 Incoming request: " + request.getRequestURI());
 
-        String token = authHeader.substring(7);
-
-        try {
-            Claims claims = jwtService.extractAllClaims(token);
-            String username = claims.getSubject();
-
-            List<String> roles = claims.get("roles", List.class);
-            List<SimpleGrantedAuthority> authorities = roles.stream()
-                    .map(SimpleGrantedAuthority::new)
-                    .collect(Collectors.toList());
-
-            UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(username, null, authorities);
-
-            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(authToken);
-        } catch (Exception e) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired JWT");
-            return;
-        }
-
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        System.out.println("🔒 No Bearer token found in Authorization header.");
         filterChain.doFilter(request, response);
+        return;
     }
+
+    String token = authHeader.substring(7);
+
+    try {
+        Claims claims = jwtService.extractAllClaims(token);
+        String username = claims.getSubject();
+        Object rawRoles = claims.get("roles");
+
+        List<SimpleGrantedAuthority> authorities = ((List<?>) rawRoles).stream()
+                .map(Object::toString)
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
+
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(username, null,
+                authorities);
+
+        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(authToken);
+
+        System.out.println("✅ Authenticated user: " + username);
+        System.out.println("✅ Authorities: " + authorities);
+    } catch (Exception e) {
+        System.out.println("❌ JWT processing error: " + e.getMessage());
+        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired JWT");
+        return;
+    }
+
+    filterChain.doFilter(request, response);
+}
+
 }

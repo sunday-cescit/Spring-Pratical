@@ -8,6 +8,8 @@ import org.springframework.validation.FieldError;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -29,9 +31,14 @@ public class GameController {
     public GameController(GameService gameService) {
         this.gameService = gameService;
     }
+    @GetMapping("/test")
+    public ResponseEntity<String> testAuth() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return ResponseEntity.ok("User: " + auth.getName() + " | Roles: " + auth.getAuthorities());
+    }
+
 
     @GetMapping
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     @Operation(summary = "Get all games", description = "Returns a list of all games")
     public List<Game> getAllGames() {
         return gameService.getAllGames();

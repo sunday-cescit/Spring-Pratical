@@ -35,10 +35,14 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/games/**").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/games/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/games/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/games/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/games/**")
+                            .hasAnyAuthority("ROLE_USER", "ROLE_ADMIN") // ✅
+                        .requestMatchers(HttpMethod.POST, "/api/games/**")
+                            .hasAuthority("ROLE_ADMIN") // ✅
+                        .requestMatchers(HttpMethod.PUT, "/api/games/**")
+                            .hasAuthority("ROLE_ADMIN") // ✅
+                        .requestMatchers(HttpMethod.DELETE, "/api/games/**")
+                            .hasAuthority("ROLE_ADMIN") // ✅
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
